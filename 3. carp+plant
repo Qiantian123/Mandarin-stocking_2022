@@ -17,7 +17,7 @@ mytheme <- theme_bw() +
   theme(panel.background = element_rect(),
         panel.grid = element_blank(),
         axis.title = element_text(size = 9,color = "black"),
-        axis.text = element_text(size = 9,color = "black"),
+        axis.text = element_text(size = 7,color = "black"),
         strip.text = element_text(size = 9),
         aspect.ratio = 13/10,
         legend.background = element_blank(),
@@ -35,23 +35,23 @@ data$treat <- factor(data$treat,
                                 "Low",
                                 "Piscivore present"))
 
-data2 <- gather(data,key = "index",value = "biomass",27,29) %>%
-  select(2,5,28,29) %>% distinct()
+data2 <- gather(data,key = "index",value = "biomass",32,34) %>%
+  select(2,5,33,34) %>% distinct()
 head(data2)
 
 data3 <- summarySE(data2,measurevar = "biomass",
-                  groupvars = c("treat",
-                                "index"),
-                  na.rm = T) %>% na.omit() %>%
+                   groupvars = c("treat",
+                                 "index"),
+                   na.rm = T) %>% na.omit() %>%
   filter(treat != "Low")
 
 data3$index <- factor(data3$index,levels = c("carpbiomass","plantbiomass"),
                       labels = c("Crucian carp","Submerged macrophyte"))
 # plot carp+plant
 data_t<-data.frame(label=c("***","n.s."),
-                        index=c("Crucian carp","Submerged macrophyte"),
-                        x=c(1.5,1.5),
-                        y=c(48,830)) 
+                   index=c("Crucian carp","Submerged macrophyte"),
+                   x=c(1.5,1.5),
+                   y=c(48,830)) 
 
 p1<-ggplot(data3,aes(treat,biomass)) + 
   geom_bar(aes(fill = treat), show.legend = F,
