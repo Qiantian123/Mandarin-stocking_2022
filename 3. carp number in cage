@@ -10,9 +10,64 @@ library(glmmTMB)
 library(lme4)
 library(lmerTest)
 library(ggimage)
+library(ggpubr)
 
-# set figure format--------
+# set p1 format--------
 mytheme <- theme_bw() + 
+  theme(panel.background = element_rect(),
+        panel.grid = element_blank(),
+        axis.title = element_text(size = 9,color = "black"),
+        axis.text = element_text(size = 9,color = "black"),
+        strip.text = element_text(size = 9),
+        aspect.ratio = 13/10,
+        legend.background = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 9))
+
+# loading carp+plant biomass data ----
+data <- read.csv("./data/nutrient.csv",header = T) %>%
+  filter(Days == 90)
+data$treat <- factor(data$treat, 
+                     levels = c("Piscivore absent",
+                                "Low density",
+                                "High density"),
+                     labels = c("Piscivore absent",
+                                "Low",
+                                "Piscivore present"))
+
+data2 <- gather(data,key = "index",value = "biomass",27,29) %>%
+  select(2,5,28,29) %>% distinct()
+head(data2)
+
+data3 <- summarySE(data2,measurevar = "biomass",
+                  groupvars = c("treat",
+                                "index"),
+                  na.rm = T) %>% na.omit() %>%
+  filter(treat != "Low")
+
+data3$index <- factor(data3$index,levels = c("carpbiomass","plantbiomass"),
+                      labels = c("Crucian carp","Submerged macrophyte"))
+# plot carp+plant
+data_t<-data.frame(label=c("***","n.s."),
+                        index=c("Crucian carp","Submerged macrophyte"),
+                        x=c(1.5,1.5),
+                        y=c(48,830)) 
+
+p1<-ggplot(data3,aes(treat,biomass)) + 
+  geom_bar(aes(fill = treat), show.legend = F,
+           stat = "identity",position = "dodge",width = 0.5) + 
+  geom_errorbar(aes(ymin = biomass - se,
+                    ymax = biomass + se,width = 0.5),
+                width = 0,size = 0.4) + 
+  facet_wrap(.~index,scales = "free_y",ncol = 2) +
+  labs(x = "", 
+       y = expression(Biomass~(g~m^{-2}))) + mytheme+
+  geom_text(data=data_t,family = 'serif',size =6,mapping=aes(x=x,y=y,label=label))
+p1
+
+
+# set p2 format--------
+mytheme2 <- theme_bw() + 
   theme(panel.background = element_rect(),
         panel.grid = element_blank(),
         axis.title = element_text(size = 9,color = "black"),
@@ -21,35 +76,32 @@ mytheme <- theme_bw() +
         aspect.ratio = 2/3,
         legend.background = element_blank(),
         legend.title = element_blank(),
-        legend.text = element_text(size = 9))
+        legend.text = element_text(size = 11))
 
-# loading cage data ----
+# loading carp number in cage data ----
 data <- read.csv("./data/nutrient.csv",header = T) %>%
   filter(Days != 0)
 data2 <- gather(data,key = "group",value = "number",14)
 names(data2)
 
-# plot carp number in cage
 data2$treat <- factor(data2$treat, 
-                         levels = c("Piscivore absent",
-                                    "Low density",
-                                    "High density"),
-                         labels = c("Piscivore absent",
-                                    "Low",
-                                    "Piscivore present"))
+                      levels = c("Piscivore absent",
+                                 "Low density",
+                                 "High density"),
+                      labels = c("Piscivore absent",
+                                 "Low",
+                                 "Piscivore present"))
 
 data3 <- summarySE(data2,measurevar = "number",
-            groupvars = c("Days",
-                          "treat",
-                          "BA"),
-            na.rm = T) %>% na.omit() %>%
+                   groupvars = c("Days",
+                                 "treat",
+                                 "BA"),
+                   na.rm = T) %>% na.omit() %>%
   filter(treat != "Low")
 
 days <- count(data$Days)$x
-
-tiff("./figures/cage_carp.tiff",res = 900, compression = "lzw",
-     width = 12,height = 8,units = "cm")
-ggplot(data3,aes(Days,number,color = treat)) + 
+# plot carp number
+p2 <- ggplot(data3,aes(Days,number,color = treat)) + 
   geom_point(size = 1.5) + 
   geom_line(size = 0.4) + 
   geom_errorbar(aes(ymin = number - se,
@@ -58,8 +110,16 @@ ggplot(data3,aes(Days,number,color = treat)) +
   labs(x = "Days", 
        y = expression(Crucian~carp~(numbers~per~trap))) + 
   scale_x_continuous(breaks = days) +
-  mytheme  +
+  mytheme2  +
   theme(legend.position = c(0.4,0.9),
         legend.direction = "horizontal") +
-  geom_vline(aes(xintercept = 73),size = 0.8,linetype = "dashed")
+  geom_vline(aes(xintercept = 73),size = 0.7,linetype = "dashed")
+p2
+
+tiff("./figures/carp+plant.tiff",res = 900, compression = "lzw",
+     width = 14,height = 20,units = "cm")
+ggarrange(p1,p2,ncol = 1,heights = c(1,1),
+          labels = c("A","B"), 
+          font.label = list(size = 14, face = "bold"))
+
 dev.off()
