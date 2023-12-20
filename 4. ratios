@@ -1,17 +1,16 @@
-library(ggpubr)
+# set working place and loading R packages---------
+setwd("D:/R work place/mandarin_stocking")
+
+library(ggplot2)
 library(dplyr)
-library(tidyr)
+library(tidyr) 
 library(Rmisc)
 library(patchwork)
+library(glmmTMB)
+library(lme4)
+library(lmerTest)
 library(ggimage)
-library(dplyr) ## tidy data packages
-library(plyr)
-library(tidyr)
-library(Rmisc)
-library(ggplot2) ## plot figures
-library(data.table)
-library(ggeffects)
-library(patchwork)
+library(ggpubr)
 
 #Zoop:Phyt
 # set p1 format--------
@@ -26,7 +25,7 @@ mytheme <- theme_bw() +
         legend.title = element_blank(),
         legend.text = element_text(size = 12))
 
-# loading zooplankton:phytoplankton data ----
+# 3. loading zooplankton data ----
 data <- read.csv("./data/nutrient.csv",header = T)%>%
   filter(Days != "0",Days != "6",Days != "12",Days != "18",
          Days != "24",Days != "30",Days != "36",Days != "42",
@@ -34,7 +33,7 @@ data <- read.csv("./data/nutrient.csv",header = T)%>%
          Days != "78",Days != "81") %>%
   mutate(Totalphy = Totalphy/0.29)
 data2 <- gather(data,key = "index",value = "ratio",21)%>%
-  select(2,5,29,30) %>% distinct()
+  select(2,5,34,35) %>% distinct()
 head(data2)
 
 data2$treat <- factor(data2$treat, 
@@ -60,8 +59,8 @@ data_t<-data.frame(label=c("n.s.","n.s."," "),
                    index=c("Zooplankton : Phytoplankton","Zooplankton : Phytoplankton","Zooplankton : Phytoplankton"),
                    x=c(1,2,1.5),
                    y=c(0.10,0.17,0.2)) 
-# plot p1
-tiff("./figures/zoop_phyt2.tiff",res = 900, compression = "lzw",
+
+tiff("./figures/zoop_phyt.tiff",res = 900, compression = "lzw",
      width = 14,height = 14,units = "cm")
 p1<-ggplot(data3,aes(factor(Days),ratio)) + 
   geom_col(aes(fill = treat), show.legend = T,
@@ -87,15 +86,15 @@ mytheme2 <- theme_bw() +
         axis.title = element_text(size = 14,color = "black"),
         axis.text = element_text(size = 10,color = "black"),
         strip.text = element_text(size = 14),
-        #aspect.ratio = 2/3,
+        aspect.ratio = 3/3,
         legend.background = element_blank(),
         legend.title = element_blank(),
         legend.text = element_text(size = 10))
 
-# loading Chl:TN Chl:TP data ----
+# 3. loading  data ----
 data <- read.csv("./data/nutrient.csv",header = T) %>%
   mutate(ChlTN = ChlTN*1000)
-
+# plot ratios
 data$treat <- factor(data$treat, 
                          levels = c("Piscivore absent",
                                     "Low density",
@@ -116,7 +115,7 @@ data2 <- gather(data,key = "index",
 data2$index <- factor(data2$index,levels = c("ChlTN","ChlTP"),
                          labels = c("Chl-a : TN * 1000","Chl-a : TP"))
 days <- c(0,12,24,36,48,63,72,81,90)
-# plot p2
+
 tiff("./figures/Ratio.tiff",res = 900, compression = "lzw",
      width = 14,height = 10,units = "cm")
 p2<-ggplot(data2,aes(Days,ratio,color = treat)) + 
