@@ -1,0 +1,62 @@
+setwd("D:/R work place/mandarin_stocking")
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(Rmisc)
+library(patchwork)
+library(glmmTMB)
+library(lme4)
+library(lmerTest)
+library(ggimage)
+# set figure format--------
+mytheme <- theme_bw() + 
+  theme(panel.background = element_rect(),
+        panel.grid = element_blank(),
+        axis.title = element_text(size = 9,color = "black"),
+        axis.text = element_text(size = 7,color = "black"),
+        strip.text = element_text(size = 9),
+        aspect.ratio = 2/3,
+        legend.background = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 9))
+
+# loading cage data ----
+cage <- read.csv("./data/cage.csv",header = T) %>%
+  filter(Days != 0)
+names(cage)
+
+# plot ----
+cage$treat <- factor(cage$treat, 
+                         levels = c("Piscivore absent",
+                                    "Low density",
+                                    "High density"),
+                         labels = c("Piscivore absent",
+                                    "Low",
+                                    "Piscivore present"))
+
+data <- summarySE(cage,measurevar = "number",
+            groupvars = c("Days",
+                          "treat",
+                          "BA"),
+            na.rm = T) %>% na.omit() %>%
+  filter(treat != "Low")
+
+days <- count(data$Days)$x
+
+tiff("./figures/cage_carp.tiff",res = 900, compression = "lzw",
+     width = 12,height = 8,units = "cm")
+ggplot(data,aes(Days,number,color = treat)) + 
+  geom_point(size = 0.8) + 
+  geom_line(size = 0.3) + 
+  geom_errorbar(aes(ymin = number - se,
+                    ymax = number + se),
+                width = 2,size = 0.4) + 
+  labs(x = "Days", 
+       y = expression(Crucian~carp~(numbers~per~trap))) + 
+  scale_x_continuous(breaks = days) +
+  mytheme  +
+  theme(legend.position = c(0.4,0.9),
+        legend.direction = "horizontal") +
+  geom_vline(aes(xintercept = 73),size = 0.3,linetype = "dashed")
+dev.off()
