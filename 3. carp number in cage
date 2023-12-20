@@ -1,3 +1,4 @@
+# set working place and loading R packages---------
 setwd("D:/R work place/mandarin_stocking")
 
 library(ggplot2)
@@ -9,6 +10,7 @@ library(glmmTMB)
 library(lme4)
 library(lmerTest)
 library(ggimage)
+
 # set figure format--------
 mytheme <- theme_bw() + 
   theme(panel.background = element_rect(),
@@ -22,12 +24,13 @@ mytheme <- theme_bw() +
         legend.text = element_text(size = 9))
 
 # loading cage data ----
-cage <- read.csv("./data/cage.csv",header = T) %>%
+data <- read.csv("./data/nutrient.csv",header = T) %>%
   filter(Days != 0)
-names(cage)
+data2 <- gather(data,key = "group",value = "number",14)
+names(data2)
 
-# plot ----
-cage$treat <- factor(cage$treat, 
+# plot carp number in cage
+data2$treat <- factor(data2$treat, 
                          levels = c("Piscivore absent",
                                     "Low density",
                                     "High density"),
@@ -35,7 +38,7 @@ cage$treat <- factor(cage$treat,
                                     "Low",
                                     "Piscivore present"))
 
-data <- summarySE(cage,measurevar = "number",
+data3 <- summarySE(data2,measurevar = "number",
             groupvars = c("Days",
                           "treat",
                           "BA"),
@@ -46,9 +49,9 @@ days <- count(data$Days)$x
 
 tiff("./figures/cage_carp.tiff",res = 900, compression = "lzw",
      width = 12,height = 8,units = "cm")
-ggplot(data,aes(Days,number,color = treat)) + 
-  geom_point(size = 0.8) + 
-  geom_line(size = 0.3) + 
+ggplot(data3,aes(Days,number,color = treat)) + 
+  geom_point(size = 1.5) + 
+  geom_line(size = 0.4) + 
   geom_errorbar(aes(ymin = number - se,
                     ymax = number + se),
                 width = 2,size = 0.4) + 
@@ -58,5 +61,5 @@ ggplot(data,aes(Days,number,color = treat)) +
   mytheme  +
   theme(legend.position = c(0.4,0.9),
         legend.direction = "horizontal") +
-  geom_vline(aes(xintercept = 73),size = 0.3,linetype = "dashed")
+  geom_vline(aes(xintercept = 73),size = 0.8,linetype = "dashed")
 dev.off()
