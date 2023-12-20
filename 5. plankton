@@ -13,7 +13,7 @@ library(ggimage)
 library(ggpubr)
 
 ## phytoplankton + zooplankton-------
-# 2. set figure format--------
+# set figure format--------
 mytheme <- theme_bw() + 
   theme(panel.background = element_rect(),
         panel.grid = element_blank(),
@@ -26,7 +26,7 @@ mytheme <- theme_bw() +
         legend.key.size = unit(0.2, "inches"),
         legend.text = element_text(size = 12))
 
-# 3. loading data ----
+# loading data ----
 data <- read.csv("./data/nutrient.csv",header = T)  %>%
   mutate(Phytoplankton = 0.29*Phytoplankton,
          Total = Total)
