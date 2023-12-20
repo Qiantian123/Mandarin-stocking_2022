@@ -1,6 +1,6 @@
 # set working place and loading R packages---------
 setwd("D:/R work place/mandarin_stocking")
-
+ 
 library(ggplot2)
 library(dplyr)
 library(tidyr) 
