@@ -1,0 +1,143 @@
+library(ggpubr)
+library(dplyr)
+library(tidyr)
+library(Rmisc)
+library(patchwork)
+library(ggimage)
+library(dplyr) ## tidy data packages
+library(plyr)
+library(tidyr)
+library(Rmisc)
+library(ggplot2) ## plot figures
+library(data.table)
+library(ggeffects)
+library(patchwork)
+
+#Zoop:Phyt
+# set p1 format--------
+mytheme <- theme_bw() + 
+  theme(panel.background = element_rect(),
+        panel.grid = element_blank(),
+        axis.title = element_text(size = 14,color = "black"),
+        axis.text = element_text(size = 10,color = "black"),
+        strip.text = element_text(size = 14),
+        #aspect.ratio = 3/3,
+        legend.background = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12))
+
+# loading zooplankton:phytoplankton data ----
+data <- read.csv("./data/nutrient.csv",header = T)%>%
+  filter(Days != "0",Days != "6",Days != "12",Days != "18",
+         Days != "24",Days != "30",Days != "36",Days != "42",
+         Days != "48",Days != "54",Days != "63",Days != "75",
+         Days != "78",Days != "81") %>%
+  mutate(Totalphy = Totalphy/0.29)
+data2 <- gather(data,key = "index",value = "ratio",21)%>%
+  select(2,5,29,30) %>% distinct()
+head(data2)
+
+data2$treat <- factor(data2$treat, 
+                      levels = c("Piscivore absent",
+                                 "Low density",
+                                 "High density"),
+                      labels = c("Piscivore absent",
+                                 "Low",
+                                 "Piscivore present"))
+
+data3 <- summarySE(data2,measurevar = "ratio",
+                   groupvars = c("Days",
+                                 "treat",
+                                 "index"),
+                   na.rm = T) %>% na.omit() %>%
+  filter(treat != "Low")
+head(data3)
+data3$index <- factor(data3$index,
+                      levels = c("Totalphy"),
+                      labels = c("Zooplankton : Phytoplankton"))
+
+data_t<-data.frame(label=c("n.s.","n.s."," "),
+                   index=c("Zooplankton : Phytoplankton","Zooplankton : Phytoplankton","Zooplankton : Phytoplankton"),
+                   x=c(1,2,1.5),
+                   y=c(0.10,0.17,0.2)) 
+# plot p1
+tiff("./figures/zoop_phyt2.tiff",res = 900, compression = "lzw",
+     width = 14,height = 14,units = "cm")
+p1<-ggplot(data3,aes(factor(Days),ratio)) + 
+  geom_col(aes(fill = treat), show.legend = T,
+           position = 'dodge',width = 0.85) + 
+  geom_errorbar(aes(factor(Days),group=treat,ymin = ratio - se,
+                    ymax = ratio + se),
+                position = position_dodge(width = 0.85),
+                width = 0,size = 0.4) + 
+  facet_wrap(.~index,scales = "free_y",ncol = 1) +
+  labs(x = "Days", 
+       y = expression(Ratio)) + mytheme+
+  theme(legend.position = c(0.2,0.88)) +
+  geom_text(data=data_t,family = 'serif',size =6,
+            mapping=aes(x=x,y=y,label=label),size=5)
+p1
+dev.off()
+
+#Chla:NP
+# 2. set figure format--------
+mytheme2 <- theme_bw() + 
+  theme(panel.background = element_rect(),
+        panel.grid = element_blank(),
+        axis.title = element_text(size = 14,color = "black"),
+        axis.text = element_text(size = 10,color = "black"),
+        strip.text = element_text(size = 14),
+        #aspect.ratio = 2/3,
+        legend.background = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 10))
+
+# loading Chl:TN Chl:TP data ----
+data <- read.csv("./data/nutrient.csv",header = T) %>%
+  mutate(ChlTN = ChlTN*1000)
+
+data$treat <- factor(data$treat, 
+                         levels = c("Piscivore absent",
+                                    "Low density",
+                                    "High density"),
+                         labels = c("Piscivore absent",
+                                    "Low",
+                                    "Piscivore present"))
+
+data2 <- gather(data,key = "index",
+                value = "ratio",15:16) %>%
+  summarySE(measurevar = "ratio",
+            groupvars = c("Days",
+                          "treat",
+                          "index"),
+            na.rm = T) %>% na.omit() %>%
+  filter(treat != "Low")
+
+data2$index <- factor(data2$index,levels = c("ChlTN","ChlTP"),
+                         labels = c("Chl-a : TN * 1000","Chl-a : TP"))
+days <- c(0,12,24,36,48,63,72,81,90)
+# plot p2
+tiff("./figures/Ratio.tiff",res = 900, compression = "lzw",
+     width = 14,height = 10,units = "cm")
+p2<-ggplot(data2,aes(Days,ratio,color = treat)) + 
+  geom_point(size = 0.8) + 
+  geom_line(size = 0.3) + 
+  geom_errorbar(aes(ymin = ratio - se,
+                    ymax = ratio + se),
+                width = 1,size = 0.2) + 
+  facet_wrap(~index,scales = "free_y",ncol = 2) +
+  labs(x = "", 
+       y = expression(Ratio)) + 
+  mytheme2  +
+  theme(legend.position = c(0.71,0.85)) +
+  geom_vline(aes(xintercept = 73),size = 0.2,linetype = "dashed") +
+  scale_x_continuous(breaks = days)
+p2
+dev.off()
+
+tiff("./figures/Ratio1+2.tiff",res = 900, compression = "lzw",
+     width = 14,height = 16,units = "cm")
+ggarrange(p2,p1,ncol = 1,heights = c(0.98,1),align = "hv",
+          labels = c("A","B"), 
+          font.label = list(size = 14, face = "bold"))
+dev.off()
