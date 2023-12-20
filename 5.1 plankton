@@ -1,0 +1,66 @@
+## phytoplankton + zooplankton-------
+# set figure format--------
+mytheme <- theme_bw() + 
+  theme(panel.background = element_rect(),
+        panel.grid = element_blank(),
+        axis.title = element_text(size = 14,color = "black"),
+        axis.text = element_text(size = 12,color = "black"),
+        strip.text = element_text(size = 14),
+        aspect.ratio = 3/3,
+        legend.background = element_blank(),
+        legend.title = element_blank(),
+        legend.key.size = unit(0.2, "inches"),
+        legend.text = element_text(size = 12))
+
+# loading data ----
+data <- read.csv("./data/nutrient.csv",header = T)  %>%
+  mutate(Phytoplankton = 0.29*Phytoplankton,
+         Total = Total)
+
+# plot biomass(dry weight)
+data$treat <- factor(data$treat, 
+                     levels = c("Piscivore absent",
+                                "Low density",
+                                "High density"),
+                     labels = c("Piscivore absent",
+                                "Low",
+                                "Piscivore present"))
+
+data2 <- gather(data,key = "index",value = "biomass",17,22) %>%
+  select(2,3,5,28,29) %>% distinct()
+head(data2)
+
+data3 <- summarySE(data2,measurevar = "biomass",
+                   groupvars = c("treat",
+                                 "Days",
+                                 "index"),
+                   na.rm = T) %>% na.omit() %>%
+  filter(treat != "Low",
+         Days != "0",
+         Days != "36")
+data3$index <- factor(data3$index,
+                      levels = c("Phytoplankton","Total"),
+                      labels = c("Phytoplankton","Zooplankton"))
+
+data_t<-data.frame(label=c("*","*","*","n.s."," "," "),
+                   index=c("Phytoplankton","Zooplankton",
+                           "Phytoplankton","Zooplankton",
+                           "Phytoplankton","Zooplankton"),
+                   x=c(1,1,2,2,1,1),
+                   y=c(8,0.45,14,0.52,15,0.56)) 
+tiff("./figures/phyt+zoop_biomass.tiff",res = 900, compression = "lzw",
+     width = 14,height = 10,units = "cm")
+ggplot(data3,aes(factor(Days),biomass)) + 
+  geom_col(aes(fill = treat), show.legend = T,
+           position = 'dodge',width = 0.85) + 
+  geom_errorbar(aes(factor(Days),group=treat,ymin = biomass - se,
+                    ymax = biomass + se),
+                position = position_dodge(width = 0.85),
+                width = 0,size = 0.4) + 
+  facet_wrap(.~index,scales = "free_y",ncol = 2) +
+  labs(x = "Days", 
+       y = expression(Biomass~(mg~L^{-1}))) + mytheme+
+  theme(legend.position = 'top') + 
+  geom_text(data=data_t,
+            mapping=aes(x=x,y=y,label=label),size=5) 
+dev.off()
