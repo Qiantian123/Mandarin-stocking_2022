@@ -10,7 +10,7 @@ library(lme4)
 library(lmerTest)
 library(ggimage)
 
-# set figure format--------
+# set figure format-------
 mytheme <- theme_bw() + 
   theme(panel.background = element_rect(),
         panel.grid = element_blank(),
