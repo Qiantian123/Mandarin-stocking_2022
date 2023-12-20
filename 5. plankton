@@ -12,7 +12,8 @@ library(lmerTest)
 library(ggimage)
 library(ggpubr)
 
-# set figure format--------
+## phytoplankton + zooplankton-------
+# 2. set figure format--------
 mytheme <- theme_bw() + 
   theme(panel.background = element_rect(),
         panel.grid = element_blank(),
@@ -25,7 +26,7 @@ mytheme <- theme_bw() +
         legend.key.size = unit(0.2, "inches"),
         legend.text = element_text(size = 12))
 
-# loading data ----
+# 3. loading data ----
 data <- read.csv("./data/nutrient.csv",header = T)  %>%
   mutate(Phytoplankton = 0.29*Phytoplankton,
          Total = Total)
@@ -40,7 +41,7 @@ data$treat <- factor(data$treat,
                                 "Piscivore present"))
 
 data2 <- gather(data,key = "index",value = "biomass",17,22) %>%
-  select(2,3,5,28,29) %>% distinct()
+  select(2,3,5,33,34) %>% distinct()
 head(data2)
 
 data3 <- summarySE(data2,measurevar = "biomass",
@@ -75,5 +76,5 @@ ggplot(data3,aes(factor(Days),biomass)) +
        y = expression(Biomass~(mg~L^{-1}))) + mytheme+
   theme(legend.position = 'top') + 
   geom_text(data=data_t,
-            mapping=aes(x=x,y=y,label=label),size=5) 
+            mapping=aes(x=x,y=y,label=label),size=5)
 dev.off()
