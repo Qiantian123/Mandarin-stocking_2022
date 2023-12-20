@@ -1,0 +1,73 @@
+setwd("D:/R work place/mandarin_stocking")
+# loading packages and data ------
+library(ggplot2)## plot figures
+library(dplyr)## tidy data packages
+library(tidyr)
+library(Rmisc)
+library(patchwork)
+library(glmmTMB)
+library(lme4)
+library(lmerTest)
+library(ggimage)
+
+# set figure format--------
+mytheme <- theme_bw() + 
+  theme(panel.background = element_rect(),
+        panel.grid = element_blank(),
+        axis.title = element_text(size = 14,color = "black"),
+        axis.text = element_text(size = 10,color = "black"),
+        strip.text = element_text(size = 14),
+        #aspect.ratio = 2/3,
+        legend.background = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14))
+
+# loading nutrient data ----
+nutrient <- read.csv("./data/nutrient.csv",header = T) %>%
+  mutate(DTP = DTP*1000,TP = TP *1000)
+names(nutrient)
+head(nutrient)
+# plot nutrients
+nutrient$treat <- factor(nutrient$treat, 
+                          levels = c("Piscivore absent",
+                                     "Low density",
+                                     "High density"),
+                          labels = c("Piscivore absent",
+                                     "Low",
+                                     "Piscivore present"))
+
+saveRDS(nutrient, "./data/nutrient_update.rds")
+names(nutrient)
+
+np_ss <- gather(nutrient,key = "nutrient",
+                 value = "conc",6:13) %>%
+  summarySE(measurevar = "conc",
+            groupvars = c("Days",
+                          "treat",
+                          "nutrient"),
+            na.rm = T) %>% na.omit() %>%
+  filter(treat != "Low")
+
+np_ss$nutrient <- factor(np_ss$nutrient,levels = c("TN","DTN","TP","DTP",
+                                                   "TSS","ISS","OSS","Chl"),
+                         labels = c("TN","DTN","TP * 1000","DTP * 1000",
+                                    "TSS","ISS","OSS","Chl-a * 1000"))
+days <- c(0,12,24,36,48,63,72,81,90)
+
+tiff("./figures/nutrient.tiff",res = 900, compression = "lzw",
+     width = 14,height = 20,units = "cm")
+ggplot(np_ss,aes(Days,conc,color = treat)) + 
+  geom_point(size = 0.8) + 
+  geom_line(size = 0.3) + 
+  geom_errorbar(aes(ymin = conc - se,
+                    ymax = conc + se),
+                width = 1,size = 0.2) + 
+  facet_wrap(~nutrient,scales = "free_y",ncol = 2) +
+  labs(x = "Days", 
+       y = expression(Concentration~(mg~L^{-1}))) + 
+  mytheme  +
+  theme(legend.position = "top",
+        legend.direction = "horizontal") +
+  geom_vline(aes(xintercept = 73),size = 0.2,linetype = "dashed") +
+  scale_x_continuous(breaks = days)
+dev.off()
